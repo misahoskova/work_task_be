@@ -23,7 +23,7 @@ export const stateEnum = pgEnum('state_enum', [
 
 export const person = pgTable('person', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar('name').notNull(),
+  name: varchar('name', { length: 200 }).notNull(),
   surname: varchar('surname', { length: 200 }).notNull(),
   email: varchar('email', { length: 200 }).unique().notNull(),
   position: positionEnum('position').notNull(),
