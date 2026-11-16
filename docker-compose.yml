@@ -4,11 +4,11 @@ services:
     env_file:
       - .env
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - db_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
       interval: 3s
       timeout: 3s
       retries: 20
@@ -21,7 +21,7 @@ services:
     env_file:
       - .env
     ports:
-      - "8888:80"
+      - '8888:80'
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
