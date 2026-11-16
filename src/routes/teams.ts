@@ -20,15 +20,15 @@ teamsRouter.get('/', async (c) => {
 teamsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
 
-  const [teams] = await db.select().from(team).where(eq(team.id, id))
+  const [foundTeam] = await db.select().from(team).where(eq(team.id, id))
 
-  if (!teams) {
+  if (!foundTeam) {
     throw new HTTPException(404, { message: 'Tým nebyl nalezen' })
   }
 
   const personTeam = await db.select().from(person).where(eq(person.teamId, id))
 
-  return c.json({ ...teams, teams: personTeam })
+  return c.json({ ...foundTeam, teams: personTeam })
 })
 
 teamsRouter.post('/', validate('json', teamSchema), async (c) => {
@@ -65,7 +65,7 @@ teamsRouter.delete('/:id', validate('param', idParamSchema), async (c) => {
   const persons = await db
     .select()
     .from(person)
-    .where(eq(person.id, id))
+    .where(eq(person.teamId, id))
     .limit(1)
 
   if (persons.length > 0) {
