@@ -49,7 +49,7 @@ personsRouter.post('/', validate('json', personSchema), async (c) => {
     .where(eq(team.id, data.teamId))
 
   if (!foundTeam) {
-    throw new HTTPException(400, { message: 'Tým neexistuje' })
+    throw new HTTPException(400, { message: 'Tým nebyl nalezen' })
   }
 
   const [foundEmail] = await db
@@ -86,7 +86,7 @@ personsRouter.patch(
         .where(eq(team.id, data.teamId))
 
       if (!foundTeam) {
-        throw new HTTPException(400, { message: 'Tým neexistuje' })
+        throw new HTTPException(400, { message: 'Tým nebyl nalezen' })
       }
     }
 
