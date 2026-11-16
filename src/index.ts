@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server'
-import { sql } from 'drizzle-orm'
+import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { Hono } from 'hono'
 import { db } from './db/index.js'
 
@@ -10,18 +10,18 @@ app.get('/', (c) => {
 })
 
 try {
-  await db.execute(sql`select 1`)
+  await migrate(db, { migrationsFolder: './drizzle' })
 } catch (err) {
-  console.error('Nepodařilo se připojit k databázi: ', err)
+  console.error('Nepodařilo se inicializovat databázi: ', err)
   process.exit(1)
 }
 
 serve(
   {
     fetch: app.fetch,
-    port: 3000,
+    port: 3001,
   },
   (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`)
+    console.log(`Server běží na http://localhost:${info.port}`)
   },
 )
