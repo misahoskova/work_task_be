@@ -1,13 +1,7 @@
 import { serve } from '@hono/node-server'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import { Hono } from 'hono'
+import { app } from './app.js'
 import { db } from './db/index.js'
-
-const app = new Hono()
-
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
 
 try {
   await migrate(db, { migrationsFolder: './drizzle' })
