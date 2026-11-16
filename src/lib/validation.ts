@@ -1,6 +1,7 @@
 import { zValidator } from '@hono/zod-validator'
 import type { ValidationTargets } from 'hono'
 import type { ZodType } from 'zod'
+import z from 'zod'
 
 export const validate = <
   T extends ZodType,
@@ -24,3 +25,7 @@ export const validate = <
       )
     }
   })
+
+export const idParamSchema = z.object({
+  id: z.coerce.number().int().positive().max(2147483674),
+})
