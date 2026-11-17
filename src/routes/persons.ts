@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { db } from '../db/index.js'
+import { database } from '../db/index.js'
 import {
   team,
   person,
@@ -26,31 +26,31 @@ const personSchema = z.object({
 const personUpdateSchema = personSchema.partial()
 
 personsRouter.get('/', async (c) => {
-  const rows = await db.select().from(person)
+  const rows = await database.select().from(person)
   return c.json(rows)
 })
 
 personsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
 
-  const [foundPerson] = await db.select().from(person).where(eq(person.id, id))
+  const [foundPerson] = await database.select().from(person).where(eq(person.id, id))
 
   if (!foundPerson) {
     throw new HTTPException(404, { message: 'Osoba nebyla nalezena' })
   }
 
-  const [foundTeam] = await db
+  const [foundTeam] = await database
     .select()
     .from(team)
     .where(eq(team.id, foundPerson.teamId))
 
-  const directProjects = await db
+  const directProjects = await database
     .select(getTableColumns(project))
     .from(projectPerson)
     .innerJoin(project, eq(projectPerson.projectId, project.id))
     .where(eq(projectPerson.personId, id))
 
-  const teamProjects = await db
+  const teamProjects = await database
     .select(getTableColumns(project))
     .from(projectTeam)
     .innerJoin(project, eq(projectTeam.projectId, project.id))
@@ -71,7 +71,7 @@ personsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
 personsRouter.post('/', validate('json', personSchema), async (c) => {
   const data = c.req.valid('json')
 
-  const [foundTeam] = await db
+  const [foundTeam] = await database
     .select()
     .from(team)
     .where(eq(team.id, data.teamId))
@@ -80,7 +80,7 @@ personsRouter.post('/', validate('json', personSchema), async (c) => {
     throw new HTTPException(400, { message: 'Tým nebyl nalezen' })
   }
 
-  const [foundEmail] = await db
+  const [foundEmail] = await database
     .select()
     .from(person)
     .where(eq(person.email, data.email))
@@ -89,7 +89,7 @@ personsRouter.post('/', validate('json', personSchema), async (c) => {
     throw new HTTPException(409, { message: 'Email už existuje' })
   }
 
-  const [created] = await db.insert(person).values(data).returning()
+  const [created] = await database.insert(person).values(data).returning()
   return c.json(created, 201)
 })
 
@@ -108,7 +108,7 @@ personsRouter.patch(
     }
 
     if (data.teamId !== undefined) {
-      const [foundTeam] = await db
+      const [foundTeam] = await database
         .select()
         .from(team)
         .where(eq(team.id, data.teamId))
@@ -119,7 +119,7 @@ personsRouter.patch(
     }
 
     if (data.email !== undefined) {
-      const [foundEmail] = await db
+      const [foundEmail] = await database
         .select()
         .from(person)
         .where(eq(person.email, data.email))
@@ -129,7 +129,7 @@ personsRouter.patch(
       }
     }
 
-    const [updated] = await db
+    const [updated] = await database
       .update(person)
       .set(data)
       .where(eq(person.id, id))
@@ -146,7 +146,7 @@ personsRouter.patch(
 personsRouter.delete('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
 
-  const [deleted] = await db.delete(person).where(eq(person.id, id)).returning()
+  const [deleted] = await database.delete(person).where(eq(person.id, id)).returning()
 
   if (!deleted) {
     throw new HTTPException(404, { message: 'Osoba nebyla nalezena' })

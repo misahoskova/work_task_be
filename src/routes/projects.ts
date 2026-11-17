@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { db } from '../db/index.js'
+import { database } from '../db/index.js'
 import {
   person,
   project,
@@ -34,14 +34,14 @@ const projectTeamParamSchema = idParamSchema.extend({
 })
 
 projectsRouter.get('/', async (c) => {
-  const rows = await db.select().from(project)
+  const rows = await database.select().from(project)
   return c.json(rows)
 })
 
 projectsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
 
-  const [foundProject] = await db
+  const [foundProject] = await database
     .select()
     .from(project)
     .where(eq(project.id, id))
@@ -50,7 +50,7 @@ projectsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
     throw new HTTPException(404, { message: 'Projekt nebyl nalezen' })
   }
 
-  const teams = await db
+  const teams = await database
     .select({
       id: team.id,
       name: team.name,
@@ -59,13 +59,13 @@ projectsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
     .innerJoin(team, eq(projectTeam.teamId, team.id))
     .where(eq(projectTeam.projectId, id))
 
-  const directPersons = await db
+  const directPersons = await database
     .select(getTableColumns(person))
     .from(projectPerson)
     .innerJoin(person, eq(projectPerson.personId, person.id))
     .where(eq(projectPerson.projectId, id))
 
-  const teamPersons = await db
+  const teamPersons = await database
     .select(getTableColumns(person))
     .from(projectTeam)
     .innerJoin(person, eq(projectTeam.teamId, person.teamId))
@@ -90,7 +90,7 @@ projectsRouter.post('/', validate('json', projectSchema), async (c) => {
     })
   }
 
-  const [created] = await db.insert(project).values(data).returning()
+  const [created] = await database.insert(project).values(data).returning()
   return c.json(created, 201)
 })
 
@@ -108,7 +108,7 @@ projectsRouter.patch(
       })
     }
 
-    const [foundProject] = await db
+    const [foundProject] = await database
       .select()
       .from(project)
       .where(eq(project.id, id))
@@ -127,7 +127,7 @@ projectsRouter.patch(
       })
     }
 
-    const [updated] = await db
+    const [updated] = await database
       .update(project)
       .set(data)
       .where(eq(project.id, id))
@@ -144,7 +144,7 @@ projectsRouter.patch(
 projectsRouter.delete('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
 
-  const [deleted] = await db
+  const [deleted] = await database
     .delete(project)
     .where(eq(project.id, id))
     .returning()
@@ -162,7 +162,7 @@ projectsRouter.put(
   async (c) => {
     const { id, personId } = c.req.valid('param')
 
-    const [foundProject] = await db
+    const [foundProject] = await database
       .select()
       .from(project)
       .where(eq(project.id, id))
@@ -171,7 +171,7 @@ projectsRouter.put(
       throw new HTTPException(404, { message: 'Projekt nebyl nalezen' })
     }
 
-    const [foundPerson] = await db
+    const [foundPerson] = await database
       .select()
       .from(person)
       .where(eq(person.id, personId))
@@ -180,7 +180,7 @@ projectsRouter.put(
       throw new HTTPException(404, { message: 'Osoba nebyla nalezena' })
     }
 
-    await db
+    await database
       .insert(projectPerson)
       .values({
         projectId: id,
@@ -198,7 +198,7 @@ projectsRouter.delete(
   async (c) => {
     const { id, personId } = c.req.valid('param')
 
-    const [deleted] = await db
+    const [deleted] = await database
       .delete(projectPerson)
       .where(
         and(
@@ -224,7 +224,7 @@ projectsRouter.put(
   async (c) => {
     const { id, teamId } = c.req.valid('param')
 
-    const [foundProject] = await db
+    const [foundProject] = await database
       .select()
       .from(project)
       .where(eq(project.id, id))
@@ -233,13 +233,16 @@ projectsRouter.put(
       throw new HTTPException(404, { message: 'Projekt nebyl nalezen' })
     }
 
-    const [foundTeam] = await db.select().from(team).where(eq(team.id, teamId))
+    const [foundTeam] = await database
+      .select()
+      .from(team)
+      .where(eq(team.id, teamId))
 
     if (!foundTeam) {
       throw new HTTPException(404, { message: 'Tým nebyl nalezen' })
     }
 
-    await db
+    await database
       .insert(projectTeam)
       .values({
         projectId: id,
@@ -257,7 +260,7 @@ projectsRouter.delete(
   async (c) => {
     const { id, teamId } = c.req.valid('param')
 
-    const [deleted] = await db
+    const [deleted] = await database
       .delete(projectTeam)
       .where(and(eq(projectTeam.projectId, id), eq(projectTeam.teamId, teamId)))
       .returning()
