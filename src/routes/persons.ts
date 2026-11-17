@@ -33,7 +33,10 @@ personsRouter.get('/', async (c) => {
 personsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
 
-  const [foundPerson] = await database.select().from(person).where(eq(person.id, id))
+  const [foundPerson] = await database
+    .select()
+    .from(person)
+    .where(eq(person.id, id))
 
   if (!foundPerson) {
     throw new HTTPException(404, { message: 'Osoba nebyla nalezena' })
@@ -146,7 +149,10 @@ personsRouter.patch(
 personsRouter.delete('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
 
-  const [deleted] = await database.delete(person).where(eq(person.id, id)).returning()
+  const [deleted] = await database
+    .delete(person)
+    .where(eq(person.id, id))
+    .returning()
 
   if (!deleted) {
     throw new HTTPException(404, { message: 'Osoba nebyla nalezena' })

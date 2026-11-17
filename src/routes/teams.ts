@@ -26,7 +26,10 @@ teamsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
     throw new HTTPException(404, { message: 'Tým nebyl nalezen' })
   }
 
-  const personTeam = await database.select().from(person).where(eq(person.teamId, id))
+  const personTeam = await database
+    .select()
+    .from(person)
+    .where(eq(person.teamId, id))
 
   return c.json({ ...foundTeam, team: personTeam })
 })
@@ -72,7 +75,10 @@ teamsRouter.delete('/:id', validate('param', idParamSchema), async (c) => {
     throw new HTTPException(409, { message: 'Tým má přiřazené osoby' })
   }
 
-  const [deleted] = await database.delete(team).where(eq(team.id, id)).returning()
+  const [deleted] = await database
+    .delete(team)
+    .where(eq(team.id, id))
+    .returning()
 
   if (!deleted) {
     throw new HTTPException(404, { message: 'Tým nebyl nalezen' })
