@@ -14,4 +14,70 @@ describe('teams', () => {
     const created = await response.json()
     expect(created.name).toBe('Alpha')
   })
+  it('POST /teams s prázdným názvem vrátí validation error', async () => {
+    const response = await app.request('/teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: '' }),
+    })
+
+    expect(response.status).toBe(400)
+
+    const body = await response.json()
+    expect(body.code).toBe('validation_error')
+  })
+  it('GET /teams/:id vrátí existující tým', async () => {
+    const createResponse = await app.request('/teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Bravo' }),
+    })
+
+    const created = await createResponse.json()
+    const response = await app.request(`/teams/${created.id}`)
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.name).toBe('Bravo')
+  })
+  it('GET /teams/999 vrátí error 404', async () => {
+    const response = await app.request('/teams/999')
+
+    expect(response.status).toBe(404)
+  })
+  it('PATCH /teams/:id změní název týmu', async () => {
+    const createResponse = await app.request('/teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Charlie' }),
+    })
+
+    const created = await createResponse.json()
+    const response = await app.request(`/teams/${created.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Delta' }),
+    })
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.name).toBe('Delta')
+  })
+  it('DELETE /teams/:id smaže tým', async () => {
+    const createResponse = await app.request('/teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Echo' }),
+    })
+
+    const created = await createResponse.json()
+    const response = await app.request(`/teams/${created.id}`, {
+      method: 'DELETE',
+    })
+
+    const getResponse = await app.request(`/teams/${created.id}`)
+
+    expect(response.status).toBe(204)
+    expect(getResponse.status).toBe(404)
+  })
 })
