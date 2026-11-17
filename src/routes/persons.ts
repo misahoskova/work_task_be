@@ -1,9 +1,16 @@
 import { Hono } from 'hono'
 import { db } from '../db/index.js'
-import { team, person, positionEnum } from '../db/schema.js'
+import {
+  team,
+  person,
+  positionEnum,
+  project,
+  projectPerson,
+  projectTeam,
+} from '../db/schema.js'
 import z from 'zod'
 import { validate, idParamSchema } from '../lib/validation.js'
-import { eq } from 'drizzle-orm'
+import { eq, getTableColumns } from 'drizzle-orm'
 import { HTTPException } from 'hono/http-exception'
 
 export const personsRouter = new Hono()
@@ -37,7 +44,28 @@ personsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
     .from(team)
     .where(eq(team.id, foundPerson.teamId))
 
-  return c.json({ ...foundPerson, team: foundTeam })
+  const directProjects = await db
+    .select(getTableColumns(project))
+    .from(projectPerson)
+    .innerJoin(project, eq(projectPerson.projectId, project.id))
+    .where(eq(projectPerson.personId, id))
+
+  const teamProjects = await db
+    .select(getTableColumns(project))
+    .from(projectTeam)
+    .innerJoin(project, eq(projectTeam.projectId, project.id))
+    .where(eq(projectTeam.teamId, foundPerson.teamId))
+
+  const extraProjects = teamProjects.filter(
+    (teamProject) =>
+      !directProjects.some(
+        (directProject) => directProject.id === teamProject.id,
+      ),
+  )
+
+  const projects = [...directProjects, ...extraProjects]
+
+  return c.json({ ...foundPerson, team: foundTeam, projects })
 })
 
 personsRouter.post('/', validate('json', personSchema), async (c) => {
@@ -49,7 +77,7 @@ personsRouter.post('/', validate('json', personSchema), async (c) => {
     .where(eq(team.id, data.teamId))
 
   if (!foundTeam) {
-    throw new HTTPException(400, { message: 'Tým neexistuje' })
+    throw new HTTPException(400, { message: 'Tým nebyl nalezen' })
   }
 
   const [foundEmail] = await db
@@ -86,7 +114,7 @@ personsRouter.patch(
         .where(eq(team.id, data.teamId))
 
       if (!foundTeam) {
-        throw new HTTPException(400, { message: 'Tým neexistuje' })
+        throw new HTTPException(400, { message: 'Tým nebyl nalezen' })
       }
     }
 

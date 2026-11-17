@@ -28,7 +28,7 @@ teamsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
 
   const personTeam = await db.select().from(person).where(eq(person.teamId, id))
 
-  return c.json({ ...foundTeam, teams: personTeam })
+  return c.json({ ...foundTeam, team: personTeam })
 })
 
 teamsRouter.post('/', validate('json', teamSchema), async (c) => {
