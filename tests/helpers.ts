@@ -9,3 +9,19 @@ export async function createTeam(name: string) {
 
   return response
 }
+
+export async function createPerson(teamId: number, email: string) {
+  const response = await app.request('/persons', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      teamId: teamId,
+      email: email,
+      name: 'Jana',
+      surname: 'Nováková',
+      position: 'developer',
+    }),
+  })
+
+  return response
+}
