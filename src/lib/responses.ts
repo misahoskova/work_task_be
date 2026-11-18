@@ -3,7 +3,7 @@ import type { ZodType } from 'zod'
 import { z } from 'zod'
 import { positionEnum, stateEnum } from '../db/schema.js'
 
-// Schémata opisují tvar odpovědí API
+// Schémata v tomto souboru nic nevalidují. Popisují tvar odpovědí API
 // a slouží jako podklad pro dokument OpenAPI na adrese /openapi.
 
 /** Chybová odpověď ve tvaru, který vrací app.onError a app.notFound. */
@@ -76,6 +76,18 @@ export const validationErrorResponse = {
   description: 'Neplatný vstup',
   content: jsonContent(validationErrorSchema),
 }
+
+/**
+ * Sestaví odpověď 400 pro routy, které kromě neplatného vstupu vracejí
+ * se stejným kódem i jinou chybu požadavku ve tvaru { code, message }.
+ *
+ * @param description popis situací, ve kterých routa odpověď 400 vrací
+ */
+
+export const badRequestResponse = (description: string) => ({
+  description,
+  content: jsonContent(z.union([validationErrorSchema, errorSchema])),
+})
 
 /**
  * Sestaví chybovou odpověď ve tvaru { code, message }.

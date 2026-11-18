@@ -12,8 +12,20 @@ import z from 'zod'
 import { validate, idParamSchema } from '../lib/validation.js'
 import { eq, getTableColumns } from 'drizzle-orm'
 import { HTTPException } from 'hono/http-exception'
+import { describeRoute } from 'hono-openapi'
+import {
+  badRequestResponse,
+  errorResponse,
+  jsonContent,
+  personResponseSchema,
+  projectResponseSchema,
+  teamResponseSchema,
+  validationErrorResponse,
+} from '../lib/responses.js'
 
 export const personsRouter = new Hono()
+
+const tags = ['Osoby']
 
 const personSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -25,82 +37,153 @@ const personSchema = z.object({
 
 const personUpdateSchema = personSchema.partial()
 
-personsRouter.get('/', async (c) => {
-  const rows = await database.select().from(person)
-  return c.json(rows)
+// Detail osoby vrací navíc její tým a projekty, na kterých se podílí.
+
+const personDetailResponseSchema = personResponseSchema.extend({
+  team: teamResponseSchema,
+  projects: z.array(projectResponseSchema),
 })
 
-personsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
-  const { id } = c.req.valid('param')
+personsRouter.get(
+  '/',
+  describeRoute({
+    tags,
+    summary: 'Seznam osob',
+    responses: {
+      200: {
+        description: 'Seznam všech osob',
+        content: jsonContent(z.array(personResponseSchema)),
+      },
+    },
+  }),
+  async (c) => {
+    const rows = await database.select().from(person)
+    return c.json(rows)
+  },
+)
 
-  const [foundPerson] = await database
-    .select()
-    .from(person)
-    .where(eq(person.id, id))
+personsRouter.get(
+  '/:id',
+  describeRoute({
+    tags,
+    summary: 'Detail osoby',
+    responses: {
+      200: {
+        description:
+          'Osoba včetně svého týmu a projektů přiřazených přímo i přes tým',
+        content: jsonContent(personDetailResponseSchema),
+      },
+      400: validationErrorResponse,
+      404: errorResponse('Osoba nebyla nalezena'),
+    },
+  }),
+  validate('param', idParamSchema),
+  async (c) => {
+    const { id } = c.req.valid('param')
 
-  if (!foundPerson) {
-    throw new HTTPException(404, { message: 'Osoba nebyla nalezena' })
-  }
+    const [foundPerson] = await database
+      .select()
+      .from(person)
+      .where(eq(person.id, id))
 
-  const [foundTeam] = await database
-    .select()
-    .from(team)
-    .where(eq(team.id, foundPerson.teamId))
+    if (!foundPerson) {
+      throw new HTTPException(404, { message: 'Osoba nebyla nalezena' })
+    }
 
-  const directProjects = await database
-    .select(getTableColumns(project))
-    .from(projectPerson)
-    .innerJoin(project, eq(projectPerson.projectId, project.id))
-    .where(eq(projectPerson.personId, id))
+    const [foundTeam] = await database
+      .select()
+      .from(team)
+      .where(eq(team.id, foundPerson.teamId))
 
-  const teamProjects = await database
-    .select(getTableColumns(project))
-    .from(projectTeam)
-    .innerJoin(project, eq(projectTeam.projectId, project.id))
-    .where(eq(projectTeam.teamId, foundPerson.teamId))
+    const directProjects = await database
+      .select(getTableColumns(project))
+      .from(projectPerson)
+      .innerJoin(project, eq(projectPerson.projectId, project.id))
+      .where(eq(projectPerson.personId, id))
 
-  // Projekt může osoba mít přímo i přes svůj tým. Z projektů týmu se berou
-  // jen ty, které mezi přímo přiřazenými nejsou, aby byl každý v seznamu jednou.
+    const teamProjects = await database
+      .select(getTableColumns(project))
+      .from(projectTeam)
+      .innerJoin(project, eq(projectTeam.projectId, project.id))
+      .where(eq(projectTeam.teamId, foundPerson.teamId))
 
-  const extraProjects = teamProjects.filter(
-    (teamProject) =>
-      !directProjects.some(
-        (directProject) => directProject.id === teamProject.id,
+    // Projekt může osoba mít přímo i přes svůj tým. Z projektů týmu se berou
+    // jen ty, které mezi přímo přiřazenými nejsou, aby byl každý v seznamu jednou.
+
+    const extraProjects = teamProjects.filter(
+      (teamProject) =>
+        !directProjects.some(
+          (directProject) => directProject.id === teamProject.id,
+        ),
+    )
+
+    const projects = [...directProjects, ...extraProjects]
+
+    return c.json({ ...foundPerson, team: foundTeam, projects })
+  },
+)
+
+personsRouter.post(
+  '/',
+  describeRoute({
+    tags,
+    summary: 'Vytvoření osoby',
+    responses: {
+      201: {
+        description: 'Vytvořená osoba',
+        content: jsonContent(personResponseSchema),
+      },
+      400: badRequestResponse(
+        'Neplatný vstup, nebo tým se zadaným teamId neexistuje',
       ),
-  )
+      409: errorResponse('Osoba se zadaným e-mailem už existuje'),
+    },
+  }),
+  validate('json', personSchema),
+  async (c) => {
+    const data = c.req.valid('json')
 
-  const projects = [...directProjects, ...extraProjects]
+    const [foundTeam] = await database
+      .select()
+      .from(team)
+      .where(eq(team.id, data.teamId))
 
-  return c.json({ ...foundPerson, team: foundTeam, projects })
-})
+    if (!foundTeam) {
+      throw new HTTPException(400, { message: 'Tým nebyl nalezen' })
+    }
 
-personsRouter.post('/', validate('json', personSchema), async (c) => {
-  const data = c.req.valid('json')
+    const [foundEmail] = await database
+      .select()
+      .from(person)
+      .where(eq(person.email, data.email))
 
-  const [foundTeam] = await database
-    .select()
-    .from(team)
-    .where(eq(team.id, data.teamId))
+    if (foundEmail !== undefined) {
+      throw new HTTPException(409, { message: 'Email už existuje' })
+    }
 
-  if (!foundTeam) {
-    throw new HTTPException(400, { message: 'Tým nebyl nalezen' })
-  }
-
-  const [foundEmail] = await database
-    .select()
-    .from(person)
-    .where(eq(person.email, data.email))
-
-  if (foundEmail !== undefined) {
-    throw new HTTPException(409, { message: 'Email už existuje' })
-  }
-
-  const [created] = await database.insert(person).values(data).returning()
-  return c.json(created, 201)
-})
+    const [created] = await database.insert(person).values(data).returning()
+    return c.json(created, 201)
+  },
+)
 
 personsRouter.patch(
   '/:id',
+  describeRoute({
+    tags,
+    summary: 'Úprava osoby',
+    description: 'Stačí poslat jen pole, která se mají změnit.',
+    responses: {
+      200: {
+        description: 'Upravená osoba',
+        content: jsonContent(personResponseSchema),
+      },
+      400: badRequestResponse(
+        'Neplatný vstup, prázdné tělo požadavku, nebo tým se zadaným teamId neexistuje',
+      ),
+      404: errorResponse('Osoba nebyla nalezena'),
+      409: errorResponse('Zadaný e-mail už má jiná osoba'),
+    },
+  }),
   validate('param', idParamSchema),
   validate('json', personUpdateSchema),
   async (c) => {
@@ -155,17 +238,31 @@ personsRouter.patch(
   },
 )
 
-personsRouter.delete('/:id', validate('param', idParamSchema), async (c) => {
-  const { id } = c.req.valid('param')
+personsRouter.delete(
+  '/:id',
+  describeRoute({
+    tags,
+    summary: 'Smazání osoby',
+    description: 'Spolu s osobou se smažou i její přiřazení k projektům.',
+    responses: {
+      204: { description: 'Osoba byla smazána' },
+      400: validationErrorResponse,
+      404: errorResponse('Osoba nebyla nalezena'),
+    },
+  }),
+  validate('param', idParamSchema),
+  async (c) => {
+    const { id } = c.req.valid('param')
 
-  const [deleted] = await database
-    .delete(person)
-    .where(eq(person.id, id))
-    .returning()
+    const [deleted] = await database
+      .delete(person)
+      .where(eq(person.id, id))
+      .returning()
 
-  if (!deleted) {
-    throw new HTTPException(404, { message: 'Osoba nebyla nalezena' })
-  }
+    if (!deleted) {
+      throw new HTTPException(404, { message: 'Osoba nebyla nalezena' })
+    }
 
-  return c.body(null, 204)
-})
+    return c.body(null, 204)
+  },
+)
