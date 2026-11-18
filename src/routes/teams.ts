@@ -31,7 +31,7 @@ teamsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
     .from(person)
     .where(eq(person.teamId, id))
 
-  return c.json({ ...foundTeam, team: personTeam })
+  return c.json({ ...foundTeam, members: personTeam })
 })
 
 teamsRouter.post('/', validate('json', teamSchema), async (c) => {
