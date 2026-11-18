@@ -1,4 +1,4 @@
-import { zValidator } from '@hono/zod-validator'
+import { validator } from 'hono-openapi'
 import type { ValidationTargets } from 'hono'
 import type { ZodType } from 'zod'
 import z from 'zod'
@@ -20,14 +20,18 @@ export const validate = <
   target: Target,
   schema: T,
 ) =>
-  zValidator(target, schema, (result, c) => {
+  validator(target, schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           code: 'validation_error',
           message: 'Neplatný vstup',
-          details: result.error.issues.map((issue) => ({
-            path: issue.path.join('.'),
+          details: result.error.map((issue) => ({
+            path: (issue.path ?? [])
+              .map((segment) =>
+                String(typeof segment === 'object' ? segment.key : segment),
+              )
+              .join('.'),
             message: issue.message,
           })),
         },
