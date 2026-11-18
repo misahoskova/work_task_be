@@ -31,7 +31,7 @@ teamsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
     .from(person)
     .where(eq(person.teamId, id))
 
-  return c.json({ ...foundTeam, team: personTeam })
+  return c.json({ ...foundTeam, members: personTeam })
 })
 
 teamsRouter.post('/', validate('json', teamSchema), async (c) => {
@@ -64,6 +64,9 @@ teamsRouter.patch(
 
 teamsRouter.delete('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
+
+  // Osoba musí vždy patřit do týmu, proto tým se členy smazat nejde.
+  // Databáze by smazání odmítla sama, tahle kontrola vrátí srozumitelnou odpověď 409.
 
   const persons = await database
     .select()

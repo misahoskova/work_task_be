@@ -71,6 +71,10 @@ projectsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
     .innerJoin(person, eq(projectTeam.teamId, person.teamId))
     .where(eq(projectTeam.projectId, id))
 
+  // Osoba může být na projektu přímo i jako člen přiřazeného týmu.
+  // Ze členů týmů se proto berou jen ti, kteří mezi přímo přiřazenými nejsou,
+  // aby byl každý účastník v seznamu jednou.
+
   const extraPersons = teamPersons.filter(
     (teamPerson) =>
       !directPersons.some((directPerson) => directPerson.id === teamPerson.id),
@@ -102,6 +106,9 @@ projectsRouter.patch(
     const { id } = c.req.valid('param')
     const data = c.req.valid('json')
 
+    // Schéma pro úpravu má všechna pole nepovinná, takže validací projde
+    // i prázdné tělo. Bez údajů ale není co upravit.
+
     if (Object.keys(data).length === 0) {
       throw new HTTPException(400, {
         message: 'Požadavek neobsahuje žádné údaje k úpravě',
@@ -118,6 +125,10 @@ projectsRouter.patch(
     }
 
     const startDate = data.startDate ?? foundProject.startDate
+
+    // undefined znamená, že datum ukončení v požadavku nepřišlo a platí uložené.
+    // null znamená, že se má datum ukončení vymazat.
+
     const endDate =
       data.endDate !== undefined ? data.endDate : foundProject.endDate
 

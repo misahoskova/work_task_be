@@ -36,7 +36,7 @@ services:
       retries: 10
 
   pgadmin:
-    image: dpage/pgadmin4
+    build: ./pgadmin
     depends_on:
       db:
         condition: service_healthy

@@ -3,6 +3,16 @@ import type { ValidationTargets } from 'hono'
 import type { ZodType } from 'zod'
 import z from 'zod'
 
+/**
+ * Vytvoří mezikrok, který před routou zkontroluje část požadavku podle schématu zod.
+ *
+ * Při neplatném vstupu vrátí odpověď 400 v jednotném formátu
+ * `{ code, message, details }` a routa se nespustí.
+ *
+ * @param target Která část požadavku se kontroluje: `json`, `param` nebo `query`.
+ * @param schema Pravidla, kterým musí vstup odpovídat.
+ */
+
 export const validate = <
   T extends ZodType,
   Target extends keyof ValidationTargets,
@@ -25,6 +35,13 @@ export const validate = <
       )
     }
   })
+
+/**
+ * Schéma pro `id` z adresy, například `/teams/5`.
+ *
+ * Převede text z adresy na číslo a povolí jen kladná celá čísla,
+ * která se vejdou do sloupce typu `integer`.
+ */
 
 export const idParamSchema = z.object({
   id: z.coerce.number().int().positive().max(2147483674),
