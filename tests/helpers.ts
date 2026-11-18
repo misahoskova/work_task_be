@@ -25,3 +25,17 @@ export async function createPerson(teamId: number, email: string) {
 
   return response
 }
+
+export async function createProject(name: string) {
+  const response = await app.request('/projects', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: name,
+      state: 'Planned',
+      startDate: '2026-11-16',
+    }),
+  })
+
+  return response
+}
