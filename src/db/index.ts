@@ -7,4 +7,4 @@ if (!databaseUrl) {
   throw new Error('Chybí proměnná prostředí DATABASE_URL')
 }
 
-export const db = drizzle(databaseUrl)
+export const database = drizzle(databaseUrl)
