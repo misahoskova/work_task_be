@@ -1,10 +1,16 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { HTTPException } from 'hono/http-exception'
 import { personsRouter } from './routes/persons.js'
 import { teamsRouter } from './routes/teams.js'
 import { projectsRouter } from './routes/projects.js'
 
 export const app = new Hono()
+
+app.use(
+  '*',
+  cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000' }),
+)
 
 app.get('/health', (c) => {
   return c.json({ status: 'ok' })
