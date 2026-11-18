@@ -1,25 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { app } from '../src/app'
+import { createTeam } from './helpers'
 
 describe('teams', () => {
   it('POST /teams vytvoří tým', async () => {
-    const response = await app.request('/teams', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Alpha' }),
-    })
+    const response = await createTeam('Alpha')
+    const created = await response.json()
 
     expect(response.status).toBe(201)
-
-    const created = await response.json()
     expect(created.name).toBe('Alpha')
   })
   it('POST /teams s prázdným názvem vrátí validation error', async () => {
-    const response = await app.request('/teams', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: '' }),
-    })
+    const response = await createTeam('')
 
     expect(response.status).toBe(400)
 
@@ -27,11 +19,7 @@ describe('teams', () => {
     expect(body.code).toBe('validation_error')
   })
   it('GET /teams/:id vrátí existující tým', async () => {
-    const createResponse = await app.request('/teams', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Bravo' }),
-    })
+    const createResponse = await createTeam('Bravo')
 
     const created = await createResponse.json()
     const response = await app.request(`/teams/${created.id}`)
@@ -46,11 +34,7 @@ describe('teams', () => {
     expect(response.status).toBe(404)
   })
   it('PATCH /teams/:id změní název týmu', async () => {
-    const createResponse = await app.request('/teams', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Charlie' }),
-    })
+    const createResponse = await createTeam('Charlie')
 
     const created = await createResponse.json()
     const response = await app.request(`/teams/${created.id}`, {
@@ -64,11 +48,7 @@ describe('teams', () => {
     expect(body.name).toBe('Delta')
   })
   it('DELETE /teams/:id smaže tým', async () => {
-    const createResponse = await app.request('/teams', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Echo' }),
-    })
+    const createResponse = await createTeam('Echo')
 
     const created = await createResponse.json()
     const response = await app.request(`/teams/${created.id}`, {
