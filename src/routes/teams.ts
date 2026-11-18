@@ -65,6 +65,9 @@ teamsRouter.patch(
 teamsRouter.delete('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
 
+  // Osoba musí vždy patřit do týmu, proto tým se členy smazat nejde.
+  // Databáze by smazání odmítla sama, tahle kontrola vrátí srozumitelnou odpověď 409.
+
   const persons = await database
     .select()
     .from(person)

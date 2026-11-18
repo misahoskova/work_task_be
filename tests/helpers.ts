@@ -1,5 +1,12 @@
 import { app } from '../src/app'
 
+/**
+ * Založí tým přes `POST /teams`.
+ *
+ * Vrací celou odpověď, aby šel v testu zkontrolovat stavový kód
+ * i přečíst založený tým přes `response.json()`.
+ */
+
 export async function createTeam(name: string) {
   const response = await app.request('/teams', {
     method: 'POST',
@@ -9,6 +16,13 @@ export async function createTeam(name: string) {
 
   return response
 }
+
+/**
+ * Založí osobu přes `POST /persons`.
+ *
+ * Jméno, příjmení a pozice jsou pevně dané. Mění se jen tým a e-mail,
+ * protože na nich závisí pravidla, která testy ověřují.
+ */
 
 export async function createPerson(teamId: number, email: string) {
   const response = await app.request('/persons', {
@@ -25,6 +39,11 @@ export async function createPerson(teamId: number, email: string) {
 
   return response
 }
+
+/**
+ * Založí projekt přes `POST /projects` se stavem `Planned`
+ * a pevným datem zahájení.
+ */
 
 export async function createProject(name: string) {
   const response = await app.request('/projects', {

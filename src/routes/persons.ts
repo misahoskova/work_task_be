@@ -59,6 +59,9 @@ personsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
     .innerJoin(project, eq(projectTeam.projectId, project.id))
     .where(eq(projectTeam.teamId, foundPerson.teamId))
 
+  // Projekt může osoba mít přímo i přes svůj tým. Z projektů týmu se berou
+  // jen ty, které mezi přímo přiřazenými nejsou, aby byl každý v seznamu jednou.
+
   const extraProjects = teamProjects.filter(
     (teamProject) =>
       !directProjects.some(
@@ -104,6 +107,9 @@ personsRouter.patch(
     const { id } = c.req.valid('param')
     const data = c.req.valid('json')
 
+    // Schéma pro úpravu má všechna pole nepovinná, takže validací projde
+    // i prázdné tělo. Bez údajů ale není co upravit.
+
     if (Object.keys(data).length === 0) {
       throw new HTTPException(400, {
         message: 'Požadavek neobsahuje žádné údaje k úpravě',
@@ -126,6 +132,9 @@ personsRouter.patch(
         .select()
         .from(person)
         .where(eq(person.email, data.email))
+
+      // Stejný e-mail může mít jen upravovaná osoba. Konflikt nastane,
+      // až když patří někomu jinému.
 
       if (foundEmail !== undefined && foundEmail.id !== id) {
         throw new HTTPException(409, { message: 'Zadaný email už existuje' })
