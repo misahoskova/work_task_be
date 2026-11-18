@@ -5,6 +5,7 @@ import z from 'zod'
 import { validate, idParamSchema } from '../lib/validation.js'
 import { eq } from 'drizzle-orm'
 import { HTTPException } from 'hono/http-exception'
+import { describeRoute, resolver } from 'hono-openapi'
 
 export const teamsRouter = new Hono()
 
@@ -12,10 +13,31 @@ const teamSchema = z.object({
   name: z.string().trim().min(1).max(200),
 })
 
-teamsRouter.get('/', async (c) => {
-  const rows = await database.select().from(team)
-  return c.json(rows)
+const teamResponseSchema = teamSchema.extend({
+  id: z.number().int(),
 })
+
+teamsRouter.get(
+  '/',
+  describeRoute({
+    tags: ['Týmy'],
+    summary: 'Seznam týmů',
+    responses: {
+      200: {
+        description: 'Seznam všech týmů',
+        content: {
+          'application/json': {
+            schema: resolver(z.array(teamResponseSchema)),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const rows = await database.select().from(team)
+    return c.json(rows)
+  },
+)
 
 teamsRouter.get('/:id', validate('param', idParamSchema), async (c) => {
   const { id } = c.req.valid('param')
