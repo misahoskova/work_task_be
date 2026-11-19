@@ -4,6 +4,8 @@ import { HTTPException } from 'hono/http-exception'
 import { personsRouter } from './routes/persons.js'
 import { teamsRouter } from './routes/teams.js'
 import { projectsRouter } from './routes/projects.js'
+import { openAPIRouteHandler } from 'hono-openapi'
+import { swaggerUI } from '@hono/swagger-ui'
 
 export const app = new Hono()
 
@@ -19,6 +21,24 @@ app.get('/health', (c) => {
 app.route('/teams', teamsRouter)
 app.route('/persons', personsRouter)
 app.route('/projects', projectsRouter)
+
+app.get(
+  '/openapi',
+  openAPIRouteHandler(app, {
+    documentation: {
+      info: {
+        title: 'Evidence projektů a členů týmů',
+        version: '1.0.0',
+        description: 'REST API pro správu projektů, osob a týmů',
+      },
+      servers: [
+        { url: 'http://localhost:3001', description: 'Lokální server' },
+      ],
+    },
+  }),
+)
+
+app.get('/docs', swaggerUI({ url: '/openapi' }))
 
 app.notFound((c) => {
   return c.json(
