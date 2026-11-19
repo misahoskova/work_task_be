@@ -25,6 +25,8 @@ import {
 
 export const personsRouter = new Hono()
 
+// Skupina, pod kterou se routy osob zobrazí v dokumentaci API.
+
 const tags = ['Osoby']
 
 const personSchema = z.object({

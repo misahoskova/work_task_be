@@ -47,11 +47,12 @@ docker compose up -d --build
 
 Po spuštění je k dispozici:
 
-| Služba   | Adresa                | Poznámka                              |
-| -------- | --------------------- | ------------------------------------- |
-| Backend  | http://localhost:3001 | ověření: http://localhost:3001/health |
-| pgAdmin  | http://localhost:8888 | přihlášení údaji z `.env`             |
-| Postgres | localhost:5432        | přihlášení údaji z `.env`             |
+| Služba          | Adresa                     | Poznámka                              |
+| --------------- | -------------------------- | ------------------------------------- |
+| Backend         | http://localhost:3001      | ověření: http://localhost:3001/health |
+| Dokumentace API | http://localhost:3001/docs | Swagger UI                            |
+| pgAdmin         | http://localhost:8888      | přihlášení údaji z `.env`             |
+| Postgres        | localhost:5432             | přihlášení údaji z `.env`             |
 
 V pgAdminu se databáze přidává ručně: hostitel `db`, port `5432`, uživatel, heslo a název databáze z `.env`.
 
@@ -101,6 +102,7 @@ npm run dev
 | `src/db/schema.ts`      | definice tabulek a vazeb v Drizzle                                       |
 | `src/db/index.ts`       | připojení k databázi                                                     |
 | `src/lib/validation.ts` | společná validace vstupů a jednotný formát chyby validace                |
+| `src/lib/responses.ts`  | schémata odpovědí pro dokumentaci API                                    |
 | `drizzle/`              | SQL migrace vygenerované ze schématu                                     |
 | `tests/`                | testy API                                                                |
 | `docs/`                 | ER diagram databáze                                                      |
@@ -139,10 +141,23 @@ npm run dev
 | Kontejnery        | Docker, Docker Compose               |
 | Průběžné kontroly | GitHub Actions                       |
 | Správa databáze   | pgAdmin                              |
+| Validace vstupů   | zod, hono-openapi                    |
+| Dokumentace API   | hono-openapi, Swagger UI             |
 
 ## API
 
 Základní adresa při lokálním spuštění je `http://localhost:3001`. Požadavky i odpovědi jsou ve formátu JSON.
+
+### Interaktivní dokumentace
+
+Po spuštění backendu jsou k dispozici dvě adresy:
+
+| Adresa                        | Obsah                                                          |
+| ----------------------------- | -------------------------------------------------------------- |
+| http://localhost:3001/docs    | stránka Swagger UI se všemi endpointy, které jde rovnou zkusit |
+| http://localhost:3001/openapi | popis API ve formátu OpenAPI 3.1                               |
+
+Popis se generuje z kódu. Vstupy se přebírají ze stejných zod schémat, která požadavky validují, odpovědi jsou popsané u jednotlivých rout přes `describeRoute`.
 
 ### Datové typy
 
