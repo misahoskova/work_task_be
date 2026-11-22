@@ -123,4 +123,46 @@ describe('projects', () => {
     expect(detail.projects).toHaveLength(0)
     expect(response.status).toBe(204)
   })
+  it('GET /projects/:id rozlišuje přímo přiřazené účastníky a členy týmu', async () => {
+    const teamOneResponse = await createTeam('Papa')
+    const teamOne = await teamOneResponse.json()
+    const teamTwoResponse = await createTeam('Quebec')
+    const teamTwo = await teamTwoResponse.json()
+
+    const personOneResponse = await createPerson(
+      teamOne.id,
+      'petra.almerova@example.cz',
+    )
+    const personOne = await personOneResponse.json()
+    const personTwoResponse = await createPerson(
+      teamTwo.id,
+      'arnost.cerveny@example.cz',
+    )
+    const personTwo = await personTwoResponse.json()
+
+    const projectResponse = await createProject('Tango')
+    const project = await projectResponse.json()
+
+    const assignPersonResponse = await app.request(
+      `/projects/${project.id}/persons/${personOne.id}`,
+      { method: 'PUT' },
+    )
+    expect(assignPersonResponse.status).toBe(204)
+
+    const assignTeamResponse = await app.request(
+      `/projects/${project.id}/teams/${teamTwo.id}`,
+      { method: 'PUT' },
+    )
+    expect(assignTeamResponse.status).toBe(204)
+
+    const projectDetailResponse = await app.request(`/projects/${project.id}`)
+    const projectDetail = await projectDetailResponse.json()
+
+    expect(projectDetail.participants).toContainEqual(
+      expect.objectContaining({ id: personOne.id, direct: true }),
+    )
+    expect(projectDetail.participants).toContainEqual(
+      expect.objectContaining({ id: personTwo.id, direct: false }),
+    )
+  })
 })

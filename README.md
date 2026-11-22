@@ -366,13 +366,15 @@ Odpověď 200:
       "surname": "Nováková",
       "email": "jana.novakova@example.cz",
       "position": "developer",
-      "teamId": 1
+      "teamId": 1,
+      "direct": true
     }
   ]
 }
 ```
 
-Jana je k projektu přiřazená přímo a zároveň je členkou přiřazeného týmu. V poli `participants` je přesto jen jednou.
+Jana je k projektu přiřazená přímo a zároveň je členkou přiřazeného týmu.
+V poli `participants` je přesto jen jednou. Pole `direct` říká, jestli má účastník přímé přiřazení k projektu: `true` znamená, že ho lze odebrat přes `DELETE /projects/:id/persons/:personId`, `false` znamená, že je na projektu jen jako člen přiřazeného týmu.
 
 **Detail osoby**
 

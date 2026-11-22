@@ -47,12 +47,19 @@ const projectTeamParamSchema = idParamSchema.extend({
   teamId: z.coerce.number().int().positive().max(2147483647),
 })
 
+// Účastník projektu je osoba doplněná o údaj, jestli je k projektu
+// přiřazená přímo nebo je na něm jen jako člen přiřazeného týmu.
+
+const participantResponseSchema = personResponseSchema.extend({
+  direct: z.boolean().meta({ example: true }),
+})
+
 // Detail projektu vrací navíc přiřazené týmy a všechny účastníky,
 // tedy osoby přiřazené přímo i členy přiřazených týmů.
 
 const projectDetailResponseSchema = projectResponseSchema.extend({
   team: teamResponseSchema,
-  persons: z.array(personResponseSchema),
+  persons: z.array(participantResponseSchema),
 })
 
 projectsRouter.get(
@@ -132,7 +139,10 @@ projectsRouter.get(
         ),
     )
 
-    const participants = [...directPersons, ...extraPersons]
+    const participants = [
+      ...directPersons.map((person) => ({ ...person, direct: true })),
+      ...extraPersons.map((person) => ({ ...person, direct: false })),
+    ]
 
     return c.json({ ...foundProject, teams, participants })
   },
