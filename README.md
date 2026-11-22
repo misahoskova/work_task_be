@@ -510,6 +510,18 @@ DATABASE_URL=postgres://UZIVATEL:HESLO@localhost:5432/NAZEV_test npm test
 
 Databáze s tímto názvem musí předem existovat. Tabulky si v ní testy vytvoří samy.
 
+## Zabezpečení
+
+Vstupy všech endpointů validuje zod. Neplatný požadavek skončí odpovědí 400 a do databáze se nedostane.
+
+Dotazy do databáze jdou přes Drizzle ORM, které hodnoty od uživatele předává odděleně od textu dotazu.
+
+CORS povoluje volání z prohlížeče jen z adresy frontendu nastavené v `CORS_ORIGIN`.
+
+Odpovědi obsahují bezpečnostní hlavičky z mezikroku `secureHeaders`, například `X-Content-Type-Options: nosniff` a `X-Frame-Options: SAMEORIGIN`.
+
+Aplikace neřeší přihlašování ani oprávnění.
+
 ## CI
 
 Workflow `.github/workflows/ci.yml` se spouští při každém pull requestu a při každém pushi do hlavní větve. Provede instalaci závislostí, kontrolu formátování, kontrolu typů, lint, sestavení a testy.
