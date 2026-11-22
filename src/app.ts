@@ -6,6 +6,7 @@ import { teamsRouter } from './routes/teams.js'
 import { projectsRouter } from './routes/projects.js'
 import { openAPIRouteHandler } from 'hono-openapi'
 import { swaggerUI } from '@hono/swagger-ui'
+import { secureHeaders } from 'hono/secure-headers'
 
 export const app = new Hono()
 
@@ -13,6 +14,8 @@ app.use(
   '*',
   cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000' }),
 )
+
+app.use('*', secureHeaders({ strictTransportSecurity: false }))
 
 app.get('/health', (c) => {
   return c.json({ status: 'ok' })
