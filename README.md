@@ -2,7 +2,8 @@
 
 REST API pro evidenci projektů, osob a týmů. Backend je jednou ze dvou částí aplikace, druhou je frontend v samostatném repozitáři.
 
-TODO: doplnit odkaz na repozitář frontendu.
+Frontend: [work_task_fe](https://github.com/misahoskova/work_task_fe).
+Celá aplikace včetně frontendu se spouští z jeho repozitáře, postup je v jeho README.
 
 ## Popis aplikace
 
@@ -94,23 +95,23 @@ npm run dev
 
 ## Struktura projektu
 
-| Cesta                   | Obsah                                                                    |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `src/index.ts`          | start aplikace: spuštění migrací a HTTP serveru                          |
-| `src/app.ts`            | definice aplikace: CORS, připojení rout, jednotné zpracování chyb        |
-| `src/routes/`           | endpointy rozdělené podle entit: `teams.ts`, `persons.ts`, `projects.ts` |
-| `src/db/schema.ts`      | definice tabulek a vazeb v Drizzle                                       |
-| `src/db/index.ts`       | připojení k databázi                                                     |
-| `src/lib/validation.ts` | společná validace vstupů a jednotný formát chyby validace                |
-| `src/lib/responses.ts`  | schémata odpovědí pro dokumentaci API                                    |
-| `drizzle/`              | SQL migrace vygenerované ze schématu                                     |
-| `tests/`                | testy API                                                                |
-| `docs/`                 | ER diagram databáze                                                      |
-| `Dockerfile`            | image backendu                                                           |
-| `db/Dockerfile`         | image databáze                                                           |
-| `docker-compose.yml`    | spuštění databáze, backendu a pgAdminu                                   |
-| `.github/workflows/`    | kontroly spouštěné při každém pull requestu                              |
-| `pgadmin/Dockerfile`    | image pgAdminu                                                           |
+| Cesta                   | Obsah                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `src/index.ts`          | start aplikace: spuštění migrací a HTTP serveru                                                           |
+| `src/app.ts`            | definice aplikace: CORS, bezpečnostní hlavičky, připojení rout, dokumentace API, jednotné zpracování chyb |
+| `src/routes/`           | endpointy rozdělené podle entit: `teams.ts`, `persons.ts`, `projects.ts`                                  |
+| `src/db/schema.ts`      | definice tabulek a vazeb v Drizzle                                                                        |
+| `src/db/index.ts`       | připojení k databázi                                                                                      |
+| `src/lib/validation.ts` | společná validace vstupů a jednotný formát chyby validace                                                 |
+| `src/lib/responses.ts`  | schémata odpovědí pro dokumentaci API                                                                     |
+| `drizzle/`              | SQL migrace vygenerované ze schématu                                                                      |
+| `tests/`                | testy API                                                                                                 |
+| `docs/`                 | ER diagram databáze                                                                                       |
+| `Dockerfile`            | image backendu                                                                                            |
+| `db/Dockerfile`         | image databáze                                                                                            |
+| `docker-compose.yml`    | spuštění databáze, backendu a pgAdminu                                                                    |
+| `.github/workflows/`    | kontroly spouštěné při každém pull requestu                                                               |
+| `pgadmin/Dockerfile`    | image pgAdminu                                                                                            |
 
 ### Skripty
 
@@ -135,7 +136,6 @@ npm run dev
 | HTTP server       | Hono, @hono/node-server              |
 | Databáze          | PostgreSQL 18                        |
 | Přístup k datům   | Drizzle ORM, drizzle-kit pro migrace |
-| Validace vstupů   | zod, @hono/zod-validator             |
 | Testy             | Vitest                               |
 | Kvalita kódu      | Prettier, Oxlint, kontrola typů      |
 | Kontejnery        | Docker, Docker Compose               |
@@ -520,7 +520,8 @@ CORS povoluje volání z prohlížeče jen z adresy frontendu nastavené v `CORS
 
 Odpovědi obsahují bezpečnostní hlavičky z mezikroku `secureHeaders`, například `X-Content-Type-Options: nosniff` a `X-Frame-Options: SAMEORIGIN`.
 
-Aplikace neřeší přihlašování ani oprávnění.
+Součástí projektu není přihlašovací logika, protože ji zadání výslovně nevyžadovalo.
+Kdokoli s přístupem k API může data číst i měnit.
 
 ## CI
 
