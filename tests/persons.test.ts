@@ -86,4 +86,25 @@ describe('persons', () => {
 
     expect(response.status).toBe(409)
   })
+  it('POST /persons s teamId mimo rozsah vrátí validation error', async () => {
+    const response = await createPerson(3000000000, 'jana.novakova@example.cz')
+    const body = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(body.code).toBe('validation_error')
+  })
+  it('souběžné POST /persons se stejným e-mailem neskončí chybou 500', async () => {
+    const teamResponse = await createTeam('Lima')
+    const team = await teamResponse.json()
+
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, () =>
+        createPerson(team.id, 'jana.novakova@example.cz'),
+      ),
+    )
+    const statuses = responses.map((response) => response.status)
+
+    expect(statuses).not.toContain(500)
+    expect(statuses.filter((status) => status === 201)).toHaveLength(1)
+  })
 })

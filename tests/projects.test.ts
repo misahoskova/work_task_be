@@ -165,4 +165,33 @@ describe('projects', () => {
       expect.objectContaining({ id: personTwo.id, direct: false }),
     )
   })
+  it('POST /projects s moc dlouhým popisem vrátí validation error', async () => {
+    const response = await app.request('/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Hotel',
+        state: 'Planned',
+        startDate: '2026-11-16',
+        description: 'a'.repeat(2001),
+      }),
+    })
+    const body = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(body.code).toBe('validation_error')
+  })
+  it('POST /projects s rokem 0000 vrátí 400', async () => {
+    const response = await app.request('/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Golf',
+        state: 'Planned',
+        startDate: '0000-01-01',
+      }),
+    })
+
+    expect(response.status).toBe(400)
+  })
 })

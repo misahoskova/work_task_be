@@ -43,7 +43,7 @@ teamsRouter.get(
     },
   }),
   async (c) => {
-    const rows = await database.select().from(team)
+    const rows = await database.select().from(team).orderBy(team.name, team.id)
     return c.json(rows)
   },
 )

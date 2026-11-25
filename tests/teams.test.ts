@@ -60,4 +60,16 @@ describe('teams', () => {
     expect(response.status).toBe(204)
     expect(getResponse.status).toBe(404)
   })
+  it('GET /teams/:id s id mimo rozsah vrátí validation error', async () => {
+    const response = await app.request('/teams/2147483648')
+    const body = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(body.code).toBe('validation_error')
+  })
+  it('POST /teams se znakem NUL v názvu vrátí 400', async () => {
+    const response = await createTeam('a\u0000b')
+
+    expect(response.status).toBe(400)
+  })
 })
