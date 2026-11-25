@@ -95,23 +95,24 @@ npm run dev
 
 ## Struktura projektu
 
-| Cesta                   | Obsah                                                                                                     |
-| ----------------------- | --------------------------------------------------------------------------------------------------------- |
-| `src/index.ts`          | start aplikace: spuštění migrací a HTTP serveru                                                           |
-| `src/app.ts`            | definice aplikace: CORS, bezpečnostní hlavičky, připojení rout, dokumentace API, jednotné zpracování chyb |
-| `src/routes/`           | endpointy rozdělené podle entit: `teams.ts`, `persons.ts`, `projects.ts`                                  |
-| `src/db/schema.ts`      | definice tabulek a vazeb v Drizzle                                                                        |
-| `src/db/index.ts`       | připojení k databázi                                                                                      |
-| `src/lib/validation.ts` | společná validace vstupů a jednotný formát chyby validace                                                 |
-| `src/lib/responses.ts`  | schémata odpovědí pro dokumentaci API                                                                     |
-| `drizzle/`              | SQL migrace vygenerované ze schématu                                                                      |
-| `tests/`                | testy API                                                                                                 |
-| `docs/`                 | ER diagram databáze                                                                                       |
-| `Dockerfile`            | image backendu                                                                                            |
-| `db/Dockerfile`         | image databáze                                                                                            |
-| `docker-compose.yml`    | spuštění databáze, backendu a pgAdminu                                                                    |
-| `.github/workflows/`    | kontroly spouštěné při každém pull requestu                                                               |
-| `pgadmin/Dockerfile`    | image pgAdminu                                                                                            |
+| Cesta                   | Obsah                                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/index.ts`          | start aplikace: spuštění migrací a HTTP serveru                                                                                      |
+| `src/app.ts`            | definice aplikace: CORS, bezpečnostní hlavičky, limit velikosti požadavku, připojení rout, dokumentace API, jednotné zpracování chyb |
+| `src/routes/`           | endpointy rozdělené podle entit: `teams.ts`, `persons.ts`, `projects.ts`                                                             |
+| `src/db/schema.ts`      | definice tabulek a vazeb v Drizzle                                                                                                   |
+| `src/db/index.ts`       | připojení k databázi                                                                                                                 |
+| `src/lib/validation.ts` | společná validace vstupů a jednotný formát chyby validace                                                                            |
+| `src/lib/responses.ts`  | schémata odpovědí pro dokumentaci API                                                                                                |
+| `src/lib/db-errors.ts`  | rozpoznání kódu chyby PostgreSQL                                                                                                     |
+| `drizzle/`              | SQL migrace vygenerované ze schématu                                                                                                 |
+| `tests/`                | testy API                                                                                                                            |
+| `docs/`                 | ER diagram databáze                                                                                                                  |
+| `Dockerfile`            | image backendu                                                                                                                       |
+| `db/Dockerfile`         | image databáze                                                                                                                       |
+| `docker-compose.yml`    | spuštění databáze, backendu a pgAdminu                                                                                               |
+| `.github/workflows/`    | kontroly spouštěné při každém pull requestu                                                                                          |
+| `pgadmin/Dockerfile`    | image pgAdminu                                                                                                                       |
 
 ### Skripty
 
@@ -185,7 +186,7 @@ Popis se generuje z kódu. Vstupy se přebírají ze stejných zod schémat, kte
 | ------------- | ----- | --------------------------------------------------- |
 | `id`          | číslo | přiděluje databáze                                  |
 | `name`        | text  | povinné, 1 až 200 znaků                             |
-| `description` | text  | nepovinné, může být `null`                          |
+| `description` | text  | nepovinné, může být `null`, nejvýše 2000 znaků      |
 | `state`       | text  | `Planned`, `In_progress` nebo `Done`                |
 | `startDate`   | text  | povinné, datum ve tvaru `2026-11-16`                |
 | `endDate`     | text  | nepovinné, může být `null`, ne dřív než `startDate` |
@@ -236,7 +237,11 @@ Neexistující tým vrací 400, e-mail použitý jinou osobou 409. Detail osoby 
 | PUT    | `/projects/:id/teams/:teamId`     | přiřazení týmu k projektu          | 204, 404      |
 | DELETE | `/projects/:id/teams/:teamId`     | odebrání týmu z projektu           | 204, 404      |
 
-Opakované přiřazení téže osoby nebo týmu není chyba a vrací 204. Datum ukončení dřív než datum zahájení vrací 400.
+Opakované přiřazení téže osoby nebo týmu není chyba a vrací 204.
+Datum ukončení dřív než datum zahájení vrací 400.
+
+U všech endpointů s `:id`, `:personId` nebo `:teamId` v adrese vrací neplatná hodnota, tedy cokoli jiného než kladné celé číslo v rozsahu typu `integer`, odpověď 400.
+Tělo požadavku větší než 100 kB vrací 413.
 
 ### Chybové odpovědi
 
@@ -246,12 +251,12 @@ Všechny chyby mají stejný tvar:
 { "code": "error", "message": "Tým nebyl nalezen" }
 ```
 
-| Hodnota `code`     | Kdy nastane                                                       |
-| ------------------ | ----------------------------------------------------------------- |
-| `validation_error` | vstup neodpovídá pravidlům, odpověď navíc obsahuje pole `details` |
-| `not_found`        | adresa neexistuje                                                 |
-| `error`            | záměrná chyba routy, rozliší se stavovým kódem 400, 404 nebo 409  |
-| `server_error`     | neočekávaná chyba na serveru, stavový kód 500                     |
+| Hodnota `code`     | Kdy nastane                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------- |
+| `validation_error` | vstup neodpovídá pravidlům, odpověď navíc obsahuje pole `details`                                     |
+| `not_found`        | adresa neexistuje                                                                                     |
+| `error`            | záměrná chyba routy nebo hodnota odmítnutá databází, rozliší se stavovým kódem 400, 404, 409 nebo 413 |
+| `server_error`     | neočekávaná chyba na serveru, stavový kód 500                                                         |
 
 Příklad chyby validace:
 
@@ -262,7 +267,7 @@ Příklad chyby validace:
   "details": [
     {
       "path": "name",
-      "message": "Too small: expected string to have >=1 characters"
+      "message": "Hodnota je příliš malá: string musí mít >=1 znaků"
     }
   ]
 }
@@ -512,7 +517,13 @@ Databáze s tímto názvem musí předem existovat. Tabulky si v ní testy vytvo
 
 ## Zabezpečení
 
-Vstupy všech endpointů validuje zod. Neplatný požadavek skončí odpovědí 400 a do databáze se nedostane.
+Vstupy všech endpointů validuje zod.
+Neplatný požadavek skončí odpovědí 400.
+Hodnotu, která validací projde a odmítne ji až databáze, vrací API jako 400 nebo 409, ne jako chybu serveru.
+
+Tělo požadavku je omezené na 100 kB a popis projektu na 2000 znaků.
+
+Docker Compose publikuje porty jen na adrese `127.0.0.1`, takže databáze, API ani pgAdmin nejsou dostupné z okolní sítě.
 
 Dotazy do databáze jdou přes Drizzle ORM, které hodnoty od uživatele předává odděleně od textu dotazu.
 
@@ -525,4 +536,5 @@ Kdokoli s přístupem k API může data číst i měnit.
 
 ## CI
 
-Workflow `.github/workflows/ci.yml` se spouští při každém pull requestu a při každém pushi do hlavní větve. Provede instalaci závislostí, kontrolu formátování, kontrolu typů, lint, sestavení a testy.
+Workflow `.github/workflows/ci.yml` se spouští při každém pull requestu a při každém pushi do hlavní větve.
+Provede instalaci závislostí, kontrolu formátování, kontrolu typů, lint, sestavení a testy.

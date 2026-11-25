@@ -47,6 +47,8 @@ export const validate = <
  * která se vejdou do sloupce typu `integer`.
  */
 
+export const MAX_ID = 2147483647
+
 export const idParamSchema = z.object({
-  id: z.coerce.number().int().positive().max(2147483674),
+  id: z.coerce.number().int().positive().max(MAX_ID),
 })

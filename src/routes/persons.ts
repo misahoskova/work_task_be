@@ -22,6 +22,7 @@ import {
   teamResponseSchema,
   validationErrorResponse,
 } from '../lib/responses.js'
+import { MAX_ID } from '../lib/validation.js'
 
 export const personsRouter = new Hono()
 
@@ -34,7 +35,7 @@ const personSchema = z.object({
   surname: z.string().trim().min(1).max(200),
   email: z.email().trim().min(1).max(200),
   position: z.enum(positionEnum.enumValues),
-  teamId: z.number().int().positive(),
+  teamId: z.number().int().positive().max(MAX_ID),
 })
 
 const personUpdateSchema = personSchema.partial()
@@ -59,7 +60,10 @@ personsRouter.get(
     },
   }),
   async (c) => {
-    const rows = await database.select().from(person)
+    const rows = await database
+      .select()
+      .from(person)
+      .orderBy(person.surname, person.name, person.id)
     return c.json(rows)
   },
 )

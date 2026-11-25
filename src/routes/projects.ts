@@ -22,6 +22,7 @@ import {
   teamResponseSchema,
   validationErrorResponse,
 } from '../lib/responses.js'
+import { MAX_ID } from '../lib/validation.js'
 
 export const projectsRouter = new Hono()
 
@@ -31,7 +32,7 @@ const tags = ['Projekty']
 
 const projectSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  description: z.string().trim().nullable().optional(),
+  description: z.string().trim().max(2000).nullable().optional(),
   state: z.enum(stateEnum.enumValues),
   startDate: z.iso.date(),
   endDate: z.iso.date().nullable().optional(),
@@ -40,11 +41,11 @@ const projectSchema = z.object({
 const projectUpdateSchema = projectSchema.partial()
 
 const projectPersonParamSchema = idParamSchema.extend({
-  personId: z.coerce.number().int().positive().max(2147483647),
+  personId: z.coerce.number().int().positive().max(MAX_ID),
 })
 
 const projectTeamParamSchema = idParamSchema.extend({
-  teamId: z.coerce.number().int().positive().max(2147483647),
+  teamId: z.coerce.number().int().positive().max(MAX_ID),
 })
 
 // Účastník projektu je osoba doplněná o údaj, jestli je k projektu
@@ -58,8 +59,8 @@ const participantResponseSchema = personResponseSchema.extend({
 // tedy osoby přiřazené přímo i členy přiřazených týmů.
 
 const projectDetailResponseSchema = projectResponseSchema.extend({
-  team: teamResponseSchema,
-  persons: z.array(participantResponseSchema),
+  teams: z.array(teamResponseSchema),
+  participants: z.array(participantResponseSchema),
 })
 
 projectsRouter.get(
@@ -75,7 +76,10 @@ projectsRouter.get(
     },
   }),
   async (c) => {
-    const rows = await database.select().from(project)
+    const rows = await database
+      .select()
+      .from(project)
+      .orderBy(project.name, project.id)
     return c.json(rows)
   },
 )

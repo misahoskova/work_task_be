@@ -8,3 +8,7 @@ if (!databaseUrl) {
 }
 
 export const database = drizzle(databaseUrl)
+
+database.$client.on('error', (error) => {
+  console.error('Spojení s databází selhalo:', error.message)
+})
